@@ -1,0 +1,178 @@
+role vehicle(AVi, CA, DTi: agent, SKCAi: symmetric_key, H,BH,Split,EccMul: hash_func, Snd, Rcv: channel (dy))
+played_by AVi
+def=
+  local State: nat,
+  IDi,Si,Rni,Qi,IDii,G,Sca,SCNi,Rnii,PW,BKi,Bio,Rni1,Fi,Li,Ki,Ci,PIDi,SPi,Rn1,R1,A1,PIDdti,IDdti,Sdti,Qdti,Pi,C22,Rn11,R11,Rn12,A11,C11,Rn2,Rn33,Rn44:text
+  const avi_dti_c11,dti_avi_c22,s1,s2,s3,s4, s5: protocol_id
+
+  init State := 0
+  transition
+    1. State = 0 /\ Rcv(start) =|>
+        State':= 1
+        /\ IDi' := new()
+        /\ Si':= new()
+        /\ Rni':= new()
+        /\ Qi':= EccMul(Si'.G)
+        /\ IDii':=xor(IDi',H(EccMul(Si'.Sca.G).Rni'))
+        /\ Snd({IDii'.Qi'.Rni'}_SKCAi)
+        /\ secret({Si'.Sca}, s1, {AVi,CA})
+
+    2. State = 1 /\Rcv({(Split(H(IDi'.SCNi.Sca.EccMul(Si'.G))).Split(H(SCNi.Sca.EccMul(Si'.G).Split(H(IDi'.SCNi.Sca.EccMul(Si'.G))))).H(EccMul(Si'.Sca.G).Rnii')).SCNi.EccMul(Si'.G).Rnii'}_SKCAi)=|>
+     State' := 2 /\
+     PIDi':= Split(h(IDi'.SCNi.Sca.EccMul(Si.G)))/\
+     SPi':= Split(H(SCNi.Sca.EccMul(Si.G).PIDi'))/\
+     PW' := new() /\
+     Rni1':=new()/\
+     BKi':=BH(Rni1'.Bio)/\
+     Fi':=xor((Rni.Rni1'),H(IDi.PW'))/\
+     Li':= H(IDi.PW'.BKi') /\
+     Ki':= Split(Li') /\
+     Ci':= {Rni.SCNi.PIDi'.SPi'.Si.Qi}_Ki'/\
+     %key exchange
+     Rn1':=new()/\
+     R1':=EccMul(Rn1'.G)/\
+     %Due to the lack of support for segmentation operations, XOR operations are not used here
+     A1':=(PIDi'.SPi'.H(EccMul(Si.Sca.G).Rn1'))/\
+     Snd({R1'.A1'}_SKCAi) /\
+     secret({PW'.Bio}, s2, {AVi})
+
+
+  3. State = 2 /\ Rcv({(Split(H(IDdti.Sca.EccMul(Sdti'.G).PIDi)).EccMul(Sdti'.G).H(EccMul(Sca.Si.G).Rn2')).Rn2'}_SKCAi) =|>
+     State' := 3 /\
+     PIDdti':=Split(H(IDdti.Sca.EccMul(Sdti'.G).PIDi))/\
+     Qdti':=EccMul(Sdti'.G)/\
+     Pi':=(PIDi.SPi.Si.Qi.PIDdti'.Qdti')/\
+     %authentication with DTi
+     Rn11':=new()/\
+     Rn12':=new()/\
+     R11':=EccMul(Rn11'.G)/\
+     A11':=H(EccMul(Rn11'.Qdti').Rn12')/\
+     C11':={PIDi.PIDdti'}_A11'/\
+     Snd(Rn12'.R11'.C11')/\
+     witness(AVi,DTi,avi_dti_c11,C11')
+
+  4. State=3/\Rcv({PIDdti.H(PIDi.PIDdti.EccMul(Sdti.EccMul(Rn11'.G)).EccMul(Rn33'.EccMul(Si.G)).Rn44')}_H(EccMul(Rn33'.EccMul(Si.G)).Rn44').EccMul(Rn33'.G).Rn44')=|>
+     State':=4/\
+     C22':={PIDdti.H(PIDi.PIDdti.EccMul(Sdti.EccMul(Rn11'.G)).EccMul(Rn33'.EccMul(Si.G)).Rn44')}_H(EccMul(Rn33'.EccMul(Si.G)).Rn44')/\
+     request(DTi,AVi,dti_avi_c22,C22')
+
+end role
+
+
+role server(AVi, CA, DTi: agent, SKCAi: symmetric_key, H, BH, EccMul,Split: hash_func, Snd, Rcv: channel(dy))
+played_by CA
+def=
+    local State: nat,
+    IDi,Si,Rni,Sca,G,Qca,Ai,SCNi,PIDi,SPi,C22,Bi,Rnii,Ei,Rn1,A2,SPii,IDdti,Sdti,A3,PIDdti,Rn2,A4,A6,Qdti:text
+    const avi_dti_c11, dti_avi_c22,s1, s2, s3, s4, s5: protocol_id
+    init State :=0
+    transition
+     1. State = 0 /\ Rcv({xor(IDi',H(EccMul(Si'.Sca.G).Rni')).EccMul(Si'.G).Rni'}_SKCAi) =|>
+        State' := 1 /\
+        IDi':= xor(xor(IDi',H(EccMul(Si'.Sca.G).Rni')),H(EccMul(Si'.Sca.G).Rni'))/\
+        Ai':=H(IDi'.SCNi.Sca.EccMul(Si'.G))/\
+        PIDi':=Split(Ai')/\
+        Bi' := H(SCNi.Sca.EccMul(Si'.G).PIDi') /\
+        SPi' := Split(Bi') /\
+        Rnii':=new()/\
+        Ei':= (PIDi'.SPi'.H(EccMul(Si'.Sca.G).Rnii'))/\
+        Snd({Ei'.SCNi.EccMul(Si'.G).Rnii'}_SKCAi)
+
+     2. State = 1 /\ Rcv({EccMul(Rn1'.G).(PIDi'.SPi'.H(EccMul(Si.Sca.G).Rn1'))}_SKCAi) =|>
+        State' := 2 /\
+        A2':=H(SCNi.Sca.EccMul(Si.G).PIDi)/\
+        %Check authenticity of  SPi
+        SPii':=Split(A2')/\
+        IDdti':=new()/\
+        Snd({IDdti'}_SKCAi)/\
+        secret({IDdti'}, s3, {CA,DTi})
+
+
+    3. State = 2 /\ Rcv({EccMul(Sdti'.G)}_SKCAi) =|>
+        State':= 3 /\
+        Qdti':=EccMul(Sdti'.G)/\
+        A3':=H(IDdti.Sca.EccMul(Sdti'.G).PIDi) /\
+        PIDdti':=Split(A3')/\
+        Rn2':=new()/\
+        A4':= (PIDdti'.PIDi.H(EccMul(Sca.EccMul(Sdti'.G)).Rn2')) /\
+        Snd({A4'.Rn2'}_SKCAi) /\
+        secret({Rn2'}, s4, {CA,DTi})/\
+        A6':=(PIDdti'.Qdti'.H(EccMul(Sca.Si.G).Rn2'))
+
+end role
+
+role twin(AVi,CA,DTi:agent, SKCAi:symmetric_key, H, BH, EccMul,Split: hash_func,Snd, Rcv: channel(dy))
+played_by DTi
+def=
+    local State: nat,
+    IDdti,Sdti,Qdti,G,Sca,IDi,SCNi,Si,Rn2,A5,Rn12,Rn11,PIDi,PIDdti,Rn33,Rn44,R33,A33,C22,C11,SK: text
+    const avi_dti_c11, dti_avi_c22,s1, s2, s3, s4, s5: protocol_id
+    init State := 0
+    transition
+        1. State = 0 /\ Rcv({IDdti'}_SKCAi) =|>
+           State' := 1 /\
+           Sdti' := new()/\
+           Qdti':=EccMul(Sdti'.G)/\
+           Snd({Qdti'}_SKCAi)
+
+        2. State = 1 /\ Rcv({(Split(H(IDdti.Sca.EccMul(Sdti'.G).Split(H(IDi.SCNi.Sca.EccMul(Si.G))))).Split(H(IDi.SCNi.Sca.EccMul(Si.G))).H(EccMul(Sca.EccMul(Sdti'.G)).Rn2')).Rn2'}_SKCAi) =|>
+           State' := 2 /\
+           PIDdti':=Split(H(IDdti.Sca.EccMul(Sdti'.G).Split(H(IDi.SCNi.Sca.EccMul(Si.G)))))/\
+           PIDi':=Split(H(IDi.SCNi.Sca.EccMul(Si.G)))/\
+           A5' := (PIDdti'.PIDi'.H(Sdti.IDdti))
+
+         3. State=2/\Rcv(Rn12'.EccMul(Rn11'.G).{PIDi.PIDdti'}_H(EccMul(Rn11'.Qdti').Rn12'))=|>
+            State':=3/\
+            C11':=EccMul(Rn11'.G).{PIDi.PIDdti'}_H(EccMul(Rn11'.Qdti').Rn12')/\
+            request(AVi,DTi,avi_dti_c11,C11')/\
+            Rn33':=new()/\
+            Rn44':=new()/\
+            R33':=EccMul(Rn33'.G)/\
+            SK':=H(PIDi.PIDdti.EccMul(Sdti.EccMul(Rn11'.G)).EccMul(Rn33'.EccMul(Si.G)).Rn44')/\
+            A33':=H(EccMul(Rn33'.EccMul(Si.G)).Rn44')/\
+            C22':={PIDdti.SK'}_A33'/\
+            secret(SK',s5,{AVi,DTi})/\
+            witness(DTi,AVi,dti_avi_c22,C22')/\
+            Snd(C22'.R33'.Rn44')
+
+
+end role
+
+
+role session(AVi, CA, DTi: agent, SKCAi: symmetric_key, H, BH, EccMul,Split: hash_func)
+def=
+    local AS, AR, SS, SR, TS, TR: channel(dy)
+    composition
+        vehicle(AVi, CA, DTi,SKCAi,H,BH,Split,EccMul,AS, AR)/\
+        server(AVi, CA, DTi,SKCAi, H, BH, EccMul,Split,SS,SR)/\
+        twin(AVi,CA,DTi, SKCAi, H, BH, EccMul,Split,TS,TR)
+end role
+
+role environment()
+def=
+    const avi, ca, dti: agent,
+    skcai : symmetric_key,
+    h, bh,eccmul,split: hash_func,
+    avi_dti_c11, dti_avi_c22,s1, s2, s3, s4, s5: protocol_id
+
+    intruder_knowledge = {avi,ca,dti,h, bh,eccmul,split}
+
+    composition
+        session(avi, ca, dti, skcai,h, bh,eccmul,split) /\
+        session(i, ca, dti, skcai,h, bh,eccmul,split) /\
+        session(avi, ca,i, skcai,h, bh,eccmul,split)
+end role
+
+
+goal
+  secrecy_of s1
+  secrecy_of s2
+  secrecy_of s3
+  secrecy_of s4
+  secrecy_of s5
+  authentication_on avi_dti_c11
+  authentication_on dti_avi_c22
+end goal
+
+environment()
+
